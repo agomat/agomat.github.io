@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Calculation Forms</title>
+    <style>
+        body {
+            font-family: helvetica, sans-serif;
+            margin: 20px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        input[type="number"], input[type="text"] {
+            margin: 5px;
+            width: 200px;
+        }
+        form {
+            display:grid;
+            grid-template-columns: max-content max-content;
+            grid-gap:5px;
+        }
+        form label       { text-align:right; }
+        form label:after { content: ":"; }
+    </style>
+    <script>
+        function investmentToReduceAverage_old(Q1, P1, P2, percReduction = 50) {
+            const I1 = Q1 * P1;
+            const reductionFactor = 1 - percReduction / 100;
+            const investmentNew = ((reductionFactor * I1 * Q1) - I1) / (1 - reductionFactor * I1 / P2);
+            return Math.abs(investmentNew);
+        }
+
+        function investmentToReduceAverage(Q1, P1, P2, reductionPercentage) {
+            // Calcola il prezzo medio di carico attuale
+            let currentAveragePrice = P1;
+
+            // Calcola la differenza tra P1 e P2
+            let priceDifference = P1 - P2;
+
+            // Calcola il prezzo medio di carico target in base alla percentuale di riduzione e la differenza
+            let targetAveragePrice = P1 - (reductionPercentage / 100) * priceDifference;
+
+            // Calcola la quantità di coin necessaria per raggiungere il prezzo medio di carico target
+            let Q2 = (Q1 * (currentAveragePrice - targetAveragePrice)) / (targetAveragePrice - P2);
+
+            // Calcola l'investimento aggiuntivo necessario
+            let additionalInvestment = Q2 * P2;
+
+            // Calcola la nuova quantità totale di coin
+            let newQuantity = Q1 + Q2;
+
+            // Calcola il nuovo prezzo medio di carico
+            let newAveragePrice = (Q1 * P1 + Q2 * P2) / newQuantity;
+
+            return {
+                additionalInvestment: additionalInvestment,
+                newAveragePrice: newAveragePrice
+            };
+        }
+
+        function newAveragePrice(Q1, P1, P2, investment) {
+            const I1 = Q1 * P1;
+            const QNew = investment / P2;
+            const newAvgPrice = (I1 + investment) / (Q1 + QNew);
+            return newAvgPrice;
+        }
+
+        function calculateInvestment() {
+            const Q1 = parseFloat(document.getElementById('Q1').value);
+            const P1 = parseFloat(document.getElementById('P1').value);
+            const P2 = parseFloat(document.getElementById('P2').value);
+            const percReduction = parseFloat(document.getElementById('percReduction').value);
+
+            if (!isNaN(Q1) && !isNaN(P1) && !isNaN(P2) && !isNaN(percReduction)) {
+                const investmentNeeded = investmentToReduceAverage(Q1, P1, P2, percReduction).additionalInvestment;
+                document.getElementById('resultInvestment').value = investmentNeeded.toFixed(2);
+                document.getElementById('investment').value = investmentNeeded.toFixed(2); // copy to other form
+                document.getElementById('investment').dispatchEvent(new Event('input'));
+
+                // Calcolo del nuovo prezzo medio di carico
+                const newAvgPrice = newAveragePrice(Q1, P1, P2, investmentNeeded);
+                document.getElementById('resultNewAvgPrice').value = newAvgPrice.toFixed(2);
+                document.getElementById('newQty').value = (investmentNeeded / P2);
+            } else {
+                document.getElementById('resultInvestment').value = 'Invalid input';
+                document.getElementById('resultNewAvgPrice').value = 'Invalid input';
+            }
+        }
+
+        function calculateNewAveragePrice() {
+            const Q1 = parseFloat(document.getElementById('Q1b').value);
+            const P1 = parseFloat(document.getElementById('P1b').value);
+            const P2 = parseFloat(document.getElementById('P2b').value);
+            const investment = parseFloat(document.getElementById('investment').value);
+
+            if (!isNaN(Q1) && !isNaN(P1) && !isNaN(P2) && !isNaN(investment)) {
+                const newAvgPrice = newAveragePrice(Q1, P1, P2, investment);
+                document.getElementById('resultNewAveragePrice').value = newAvgPrice.toFixed(2);
+                document.getElementById('newQtyb').value = (investment / P2);
+            } else {
+                document.getElementById('resultNewAveragePrice').value = 'Invalid input';
+            }
+        }
+
+
+        // Utility
+        function copyToFormB(currentInput) {
+            const input = document.querySelector('#'+currentInput.id+"b");
+            input.value = currentInput.value;
+            input.dispatchEvent(new Event('input'));
+        }
+
+        // Funzione per salvare i valori nella LocalStorage
+        function saveToLC(element) {
+            localStorage.setItem(element.id, element.value);
+        }
+
+        // Funzione per ripristinare i valori dalla LocalStorage
+        function restoreFromLC() {
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                let value = localStorage.getItem(key);
+                let input = document.getElementById(key);
+                if (input) {
+                    input.value = value;
+                    input.dispatchEvent(new Event('input'));
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Calcola l'investimento per ridurre il prezzo medio di carico</h2>
+
+        <p>
+            <blockquote>Supponiamo di avere una quantità iniziale di coin acquistati a un prezzo specifico e di voler abbattere il prezzo medio di carico del 50% (o qualsiasi altra percentuale). Inserendo la quantità iniziale, il prezzo per coin al momento dell'acquisto, il prezzo per coin attuale e la percentuale di riduzione desiderata, il calcolo fornisce l'ammontare di investimento aggiuntivo necessario per raggiungere il nuovo prezzo medio di carico target. Inoltre, questo calcolo restituisce anche il nuovo prezzo medio di carico dopo aver effettuato l'investimento necessario.</blockquote>
+        </p>
+
+        <form>
+            <label for="Q1">Quantità iniziale (Q1) </label>
+            <input type="number" id="Q1" onInput="calculateInvestment(); copyToFormB(this); saveToLC(this)">
+            <label for="P1">Prezzo per Coin iniziale (P1) </label>
+            <input type="number" id="P1" onInput="calculateInvestment(); copyToFormB(this); saveToLC(this)">
+            <label for="P2">Prezzo per Coin attuale (P2) </label>
+            <input type="number" id="P2" onInput="calculateInvestment(); copyToFormB(this); saveToLC(this)">
+            <label for="percReduction">Percentuale di riduzione (%) </label>
+            <input type="number" id="percReduction" placeholder="1-99" onInput="calculateInvestment(); saveToLC(this)">
+            <label for="resultInvestment">Investimento necessario </label>
+            <input type="text" id="resultInvestment" disabled>
+            <label for="newQty">Nuova quantità di acquisto </label>
+            <input type="text" id="newQty" disabled>
+            <label for="resultNewAvgPrice">Nuovo prezzo medio di carico </label>
+            <input type="text" id="resultNewAvgPrice" disabled>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Calcola il nuovo prezzo medio di carico</h2>
+        <p>
+            <blockquote>Se hai una quantità iniziale di coin acquistati a un prezzo specifico e desideri aggiungere un ulteriore investimento al prezzo attuale del coin, questo calcolo mostra come il prezzo medio di carico complessivo verrà modificato. Inserendo la quantità iniziale, il prezzo per coin iniziale, il prezzo per coin attuale e l'importo del nuovo investimento, il calcolo fornisce il nuovo prezzo medio di carico risultante.</blockquote>
+        </p>
+        <form>
+            <label for="Q1b">Quantità iniziale (Q1) </label>
+            <input type="number" id="Q1b" onInput="calculateNewAveragePrice(); saveToLC(this)">
+            <label for="P1b">Prezzo per Coin iniziale (P1) </label>
+            <input type="number" id="P1b" onInput="calculateNewAveragePrice(); saveToLC(this)">
+            <label for="P2b">Prezzo per Coin attuale (P2) </label>
+            <input type="number" id="P2b" onInput="calculateNewAveragePrice(); saveToLC(this)">
+            <label for="investment">Nuovo investimento </label>
+            <input type="number" id="investment" onInput="calculateNewAveragePrice()">
+            <label for="newQtyb">Nuova quantità di acquisto </label>
+            <input type="text" id="newQtyb" disabled>
+            <label for="resultNewAveragePrice">Nuovo prezzo medio di carico </label>
+            <input type="text" id="resultNewAveragePrice" disabled>
+        </form>
+    </div>
+
+
+    <button onclick="restoreFromLC()">Ricarica valori precedenti</button>
+
+</body>
+</html>

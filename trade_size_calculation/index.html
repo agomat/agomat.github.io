@@ -1,88 +1,560 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Calcolo Size Trade</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard Trade Live</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .trade-box { 
+            border-left-width: 5px; 
+            transition: border-color 0.5s ease-in-out;
+        }
+        .trade-open { border-left-color: #0d6efd; }
+        .trade-closed { border-left-color: #6c757d; background-color: #e9ecef; }
+        .trade-in-profit { border-left-color: #198754; } /* Verde per profitto */
+        .trade-in-loss { border-left-color: #dc3545; } /* Rosso per perdita */
+
+        .editable-value {
+            cursor: pointer;
+            border-bottom: 1px dashed #0d6efd;
+            font-weight: bold;
+        }
+        .editable-value:hover { background-color: #e7f1ff; }
+        .copyable { cursor: pointer; }
+        .copyable:hover { background-color: #f0f0f0; }
+    </style>
 </head>
 <body>
-  <div class="container my-4">
-    <h1 class="mb-4">Calcolo del Trade</h1>
-    <!-- Form per il calcolo del trade -->
-    <form id="tradeCalcForm">
-      <div class="mb-3">
-        <label for="riskSelect" class="form-label">Rischio (USDT):</label>
-        <select class="form-select" id="riskSelect" name="risk">
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="7">7</option>
-          <option value="10">10</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-          <option value="30">30</option>
-          <option value="40">40</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="150">150</option>
-          <option value="200">200</option>
-          <option value="250">250</option>
-          <option value="300" selected>300</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label for="stopLossInput" class="form-label">Stop Loss (%)</label>
-        <input type="number" step="0.01" class="form-control" id="stopLossInput" name="stopLoss" placeholder="Inserisci stop loss in percentuale" required value="1.0">
-      </div>
-      <button type="button" class="btn btn-primary" onclick="calculateTrade()">Calcola</button>
-    </form>
+<div class="container my-4">
+    <h1 class="mb-2">Dashboard Trade Live 📈</h1>
+    <h5 class="text-muted mb-4" id="symbolHeader"></h5>
 
-    <!-- Area di visualizzazione dei risultati -->
-    <div id="result" class="mt-4"></div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Pannello di Controllo</strong>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="riskSelect" class="form-label">Rischio Totale (USDT):</label>
+                    <select class="form-select" id="riskSelect">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="60">60</option>
+                        <option value="90">90</option>
+                        <option value="150">150</option>
+                        <option value="300" selected>300</option>
+                        <option value="600">600</option>
+                        <option value="900">900</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="stopLossInput" class="form-label">Stop Loss (%)</label>
+                    <input type="number" step="0.01" class="form-control" id="stopLossInput" value="1.0">
+                </div>
+            </div>
+<div id="preparationSection" class="mt-3 border p-3 rounded bg-light d-none">
+                <h5>Simulazione Margine e Size</h5>
+                <div class="row align-items-end g-3">
+                    <div class="col-lg-4 col-md-12">
+                        <label for="leverageSelect" class="form-label">Leva Finanziaria:</label>
+                        <select class="form-select" id="leverageSelect" onchange="updatePreparationMargin()">
+                             <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="5">5x</option><option value="10" selected>10x</option><option value="20">20x</option><option value="30">30x</option><option value="40">40x</option><option value="50">50x</option><option value="75">75x</option><option value="100">100x</option><option value="150">150x</option><option value="200">200x</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-4 col-md-6" id="marginResultWrapper">
+                    </div>
+                    <div class="col-lg-4 col-md-6" id="sizeResultWrapper">
+                    </div>
+                </div>
+            </div>
 
-    <hr class="my-5">
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button type="button" class="btn btn-info" onclick="prepareTrade()"><i class="bi bi-calculator"></i> MI PREPARO</button>
+                <button type="button" class="btn btn-primary" onclick="openInitialTrades()"><i class="bi bi-play-circle"></i> APRI TRADE</button>
+                <button type="button" class="btn btn-warning" onclick="pyramidTrade()"><i class="bi bi-stack"></i> PIRAMIDA (x3)</button>
+                <button type="button" class="btn btn-success" onclick="closeAllTrades()"><i class="bi bi-x-octagon"></i> Chiudi Tutti</button>
+                <button type="button" class="btn btn-danger" onclick="resetAll()"><i class="bi bi-trash"></i> RESET</button>
+            </div>
+        </div>
+    </div>
 
-    <h2>Dati di Trade BTC</h2>
-    <!-- Form indipendente per dati BTC -->
-    <form id="btcDataForm">
-      <div class="mb-3">
-        <label for="btcPrice" class="form-label">Prezzo Attuale di BTC</label>
-        <input type="number" step="0.01" class="form-control" id="btcPrice" name="btcPrice" placeholder="Inserisci il prezzo attuale di BTC" required>
-      </div>
-      <div class="mb-3">
-        <label for="entryPrice" class="form-label">Prezzo di Entrata</label>
-        <input type="number" step="0.01" class="form-control" id="entryPrice" name="entryPrice" placeholder="Inserisci il prezzo di entrata" required>
-      </div>
-      <div class="mb-3">
-        <label for="tp1Price" class="form-label">Prezzo TP1</label>
-        <input type="number" step="0.01" class="form-control" id="tp1Price" name="tp1Price" placeholder="Inserisci il prezzo del TP1" required>
-      </div>
-      <button type="submit" class="btn btn-secondary">Salva Dati BTC</button>
-    </form>
-  </div>
+    <div id="liveSummary" class="mb-3"></div>
 
-  <script>
-    function calculateTrade() {
-      const risk = parseFloat(document.getElementById('riskSelect').value);
-      const stopLossPercent = parseFloat(document.getElementById('stopLossInput').value);
-      if (isNaN(risk) || isNaN(stopLossPercent) || stopLossPercent <= 0) {
-        alert('Per favore, inserisci valori validi per il rischio e lo stop loss.');
-        return;
-      }
-      const tradeSize = risk / (stopLossPercent / 100);
-      const leverage = tradeSize / risk;
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `
-        <h4>Risultati</h4>
-        <p><strong>Size del Trade:</strong> ${tradeSize.toFixed(2)} USDT</p>
-        <p><strong>Leva Necessaria:</strong> ${leverage.toFixed(2)}x</p>
-      `;
+    <div id="tradesContainer"></div>
+
+</div>
+
+<script>
+    // --- MODELLO DATI E VARIABILI GLOBALI ---
+    let trades = [];
+    let currentAsset = { symbol: 'N/A', price: 0 };
+    let priceTickerInterval = null;
+
+    // --- FUNZIONI DI GESTIONE DATI E API ---
+
+    const saveData = () => localStorage.setItem('tradeManagerData_v1', JSON.stringify(trades));
+    const loadData = () => {
+        const savedData = localStorage.getItem('tradeManagerData_v1');
+        if (savedData) {
+            trades = JSON.parse(savedData);
+            renderTrades(); // Prima renderizzazione statica
+            updateLiveElements(); // Aggiorna subito i dati live
+        }
+    };
+
+    const prepareTrade = () => {
+        const prepSection = document.getElementById('preparationSection');
+        prepSection.classList.remove('d-none'); // Mostra la sezione
+        updatePreparationMargin();
+    };
+    
+    const updatePreparationMargin = () => {
+        const risk = parseFloat(document.getElementById('riskSelect').value);
+        const stopLossPercent = parseFloat(document.getElementById('stopLossInput').value);
+        const leverage = parseFloat(document.getElementById('leverageSelect').value);
+        
+        // Seleziona i contenitori per i risultati
+        const marginWrapper = document.getElementById('marginResultWrapper');
+        const sizeWrapper = document.getElementById('sizeResultWrapper');
+
+        if(isNaN(risk) || isNaN(stopLossPercent) || stopLossPercent <= 0) {
+            marginWrapper.innerHTML = `<label class="form-label">&nbsp;</label><div class="alert alert-danger p-2 mb-0">Dati non validi</div>`;
+            sizeWrapper.innerHTML = ''; // Pulisce il campo size se i dati sono invalidi
+            return;
+        }
+
+        // Calcoli
+        const totalTradeSize = risk / (stopLossPercent / 100);
+        const margin = totalTradeSize / leverage;
+        
+        // Inserisce il risultato del Margine
+        marginWrapper.innerHTML = `
+            <label class="form-label">Margine Richiesto:</label>
+            <div class="alert alert-secondary p-2 mb-0 copyable" onclick="copyToClipboard('${margin.toFixed(2)}', this)">
+                <span class="fs-5">${margin.toFixed(2)} USDT</span>
+                <span class="copy-feedback ms-2 badge bg-primary float-end" title="Copia"><i class="bi bi-clipboard"></i></span>
+            </div>
+        `;
+        
+        // Inserisce il risultato della Size
+        sizeWrapper.innerHTML = `
+            <label class="form-label">Size Totale:</label>
+            <div class="alert alert-secondary p-2 mb-0 copyable" onclick="copyToClipboard('${totalTradeSize.toFixed(2)}', this)">
+                <span class="fs-5">${totalTradeSize.toFixed(2)} USDT</span>
+                <span class="copy-feedback ms-2 badge bg-primary float-end" title="Copia"><i class="bi bi-clipboard"></i></span>
+            </div>
+        `;
+    };
+
+    
+    // API MOCK: Simula una chiamata per ottenere il prezzo
+    const fetchPrice = (symbol) => {
+        return new Promise((resolve) => {
+            // Simula una leggera variazione di prezzo per dinamicità
+            const basePrice = 115000;
+            const randomFactor = (Math.random() - 60.5) * 100; // Variazione di +/- 50
+            const newPrice = (basePrice + randomFactor).toFixed(2);
+
+            setTimeout(() => {
+                resolve({
+                    symbol: symbol,
+                    price: newPrice
+                });
+            }, 500); // Simula latenza di rete
+        });
+    };
+
+    const startPriceTicker = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const symbol = urlParams.get('simbolo') || 'BTCUSDT';
+        document.getElementById('symbolHeader').textContent = `Asset: ${symbol}`;
+
+        if (priceTickerInterval) clearInterval(priceTickerInterval);
+
+        const tick = () => {
+            fetchPrice(symbol).then(data => {
+                currentAsset = data;
+                document.title = `${currentAsset.price} | ${currentAsset.symbol}`;
+                updateLiveElements();
+            });
+        };
+
+        tick(); // Esegui subito la prima volta
+        priceTickerInterval = setInterval(tick, 10000/2); // E poi ogni 10 secondi
+    };
+
+    // --- FUNZIONI DI GESTIONE TRADE (Logica di business) ---
+
+    // Funzione helper per aggiungere 3 trade (usata da APRI e PIRAMIDA)
+    const addThreeTrades = () => {
+        const totalRisk = parseFloat(document.getElementById('riskSelect').value);
+        const stopLossPercent = parseFloat(document.getElementById('stopLossInput').value);
+        const entryPrice = parseFloat(prompt(`Inserisci il prezzo di entrata di BTC per le 3 size:`, currentAsset.price));
+
+        if (isNaN(totalRisk) || isNaN(stopLossPercent) || isNaN(entryPrice) || stopLossPercent <= 0 || entryPrice <= 0) {
+            alert("Dati non validi. Controlla Rischio, Stop Loss e Prezzo di entrata.");
+            return;
+        }
+        
+        const riskPerTrade = totalRisk / 3;
+
+        for (let i = 0; i < 3; i++) {
+            trades.push({
+                id: Date.now() + i,
+                risk: riskPerTrade,
+                entryPrice: entryPrice,
+                stopLossPercent: stopLossPercent,
+                status: 'open',
+                pnl: 0,
+                pnlPercent: 0,
+                closePrice: null
+            });
+        }
+        saveData();
+        renderTrades();
     }
-  </script>
+    // 1. APRI TRADE INIZIALE (3 size)
+    const openInitialTrades = () => {
+        if (trades.length > 0 && !confirm("Hai già dei trade aperti. Vuoi resettarli e aprirne di nuovi?")) {
+            return;
+        }
+        trades = []; // Resetta
+        addThreeTrades();
+    };
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    // 2. PIRAMIDA (Aggiungi 3 nuove size)
+    const pyramidTrade = () => {
+        if (trades.length === 0) {
+            alert("Devi prima aprire un trade con 'APRI TRADE'.");
+            return;
+        }
+        addThreeTrades();
+    };
+    // 3. CHIUDI SINGOLO TRADE
+    const closeTrade = (id) => {
+        const closePriceInput = document.getElementById(`closePrice-${id}`);
+        const closePrice = parseFloat(closePriceInput.value);
+
+        if (isNaN(closePrice) || closePrice <= 0) {
+            alert("Inserisci un prezzo di chiusura valido.");
+            return;
+        }
+        const tradeIndex = trades.findIndex(t => t.id === id);
+        if (tradeIndex === -1) return;
+        const trade = trades[tradeIndex];
+        const tradeSize = trade.risk / (trade.stopLossPercent / 100);
+        const pnl = ((closePrice - trade.entryPrice) / trade.entryPrice) * tradeSize;
+        const pnlPercent = ((closePrice - trade.entryPrice) / trade.entryPrice) * 100;
+        trade.status = 'closed';
+        trade.closePrice = closePrice;
+        trade.pnl = pnl;
+        trade.pnlPercent = pnlPercent;
+        saveData();
+        renderTrades();
+    };
+
+    // 4. CHIUDI TUTTI I TRADE
+    const closeAllTrades = () => {
+        const openTrades = trades.filter(t => t.status === 'open');
+        if (openTrades.length === 0) {
+            alert("Non ci sono trade aperti da chiudere.");
+            return;
+        }
+        const closePrice = parseFloat(prompt("Inserisci il prezzo di chiusura per TUTTI i trade aperti:", "70000.00"));
+         if (isNaN(closePrice) || closePrice <= 0) {
+            alert("Inserisci un prezzo di chiusura valido.");
+            return;
+        }
+        openTrades.forEach(trade => {
+            const tradeSize = trade.risk / (trade.stopLossPercent / 100);
+            const pnl = ((closePrice - trade.entryPrice) / trade.entryPrice) * tradeSize;
+            const pnlPercent = ((closePrice - trade.entryPrice) / trade.entryPrice) * 100;
+            trade.status = 'closed';
+            trade.closePrice = closePrice;
+            trade.pnl = pnl;
+            trade.pnlPercent = pnlPercent;
+        });
+        saveData();
+        renderTrades();
+    };
+
+    // 5. RESETTA TUTTO
+    const resetAll = () => {
+        if (confirm("Sei sicuro di voler CANCELLARE tutti i trade e resettare il pannello? L'operazione è irreversibile.")) {
+            trades = [];
+            localStorage.removeItem('tradeManagerData_v1');
+            document.getElementById('preparationSection').classList.add('d-none'); // Nasconde la sezione di preparazione
+            renderTrades();
+        }
+    };
+    
+    // Funzioni di modifica inline
+    const editEntryPrice = (id) => {
+        const trade = trades.find(t => t.id === id);
+        if (!trade) return;
+        const newPrice = parseFloat(prompt(`Modifica prezzo di entrata per Trade #${trades.indexOf(trade) + 1}:`, trade.entryPrice));
+        if (!isNaN(newPrice) && newPrice > 0) {
+            trade.entryPrice = newPrice;
+            saveData();
+            renderTrades();
+        }
+    };
+
+    const setQuickTP = (id, percentage) => {
+        const trade = trades.find(t => t.id === id);
+        if (!trade) return;
+
+        const multiplier = 1 + (percentage / 100);
+        trade.takeProfitPrice = trade.entryPrice * multiplier;
+        
+        saveData();
+        renderTrades();
+    };
+    
+    const editStopLoss = (id) => {
+        const trade = trades.find(t => t.id === id);
+        if (!trade) return;
+        const newSL = parseFloat(prompt(`Modifica stop loss in % per Trade #${trades.indexOf(trade) + 1}:`, trade.stopLossPercent));
+        if (!isNaN(newSL) && newSL > 0) {
+            trade.stopLossPercent = newSL;
+            saveData();
+            renderTrades();
+        }
+    };
+    
+    // Modifica Take Profit
+    const editTakeProfit = (id) => {
+        const trade = trades.find(t => t.id === id);
+        if (!trade) return;
+        const currentTP = trade.takeProfitPrice || '';
+        const newTP = parseFloat(prompt(`Imposta Take Profit per Trade #${trades.indexOf(trade) + 1}:`, currentTP));
+        
+        if (!isNaN(newTP) && newTP > 0) {
+            trade.takeProfitPrice = newTP;
+            saveData();
+            renderTrades();
+        } else if (prompt.arguments[1] === '') { // Se l'utente cancella il valore
+            trade.takeProfitPrice = null;
+            saveData();
+            renderTrades();
+        }
+    };
+
+    // Copia il prezzo di entrata nei trade successivi
+    const copyEntryPrice = (sourceId) => {
+        const sourceIndex = trades.findIndex(t => t.id === sourceId);
+        if (sourceIndex === -1) return;
+
+        const sourcePrice = trades[sourceIndex].entryPrice;
+        const numToCopy = parseInt(prompt(`A quanti trade successivi vuoi copiare il prezzo ${sourcePrice}?`, "1"));
+
+        if (isNaN(numToCopy) || numToCopy <= 0) {
+            alert("Per favore, inserisci un numero valido.");
+            return;
+        }
+
+        let copiedCount = 0;
+        for (let i = sourceIndex + 1; i < trades.length && copiedCount < numToCopy; i++) {
+            // Copia solo se il trade successivo è aperto
+            if (trades[i] && trades[i].status === 'open') {
+                trades[i].entryPrice = sourcePrice;
+                copiedCount++;
+            }
+        }
+        
+        if (copiedCount > 0) {
+            saveData();
+            renderTrades();
+        } else {
+            alert("Nessun trade successivo aperto trovato da aggiornare.");
+        }
+    };
+
+
+    // --- FUNZIONI DI RENDERING E AGGIORNAMENTO UI ---
+
+    const updateLiveElements = () => {
+        let totalUnrealizedPnl = 0;
+        let openTradesCount = 0;
+
+        trades.forEach(trade => {
+            if (trade.status !== 'open') return;
+            openTradesCount++;
+
+            const tradeSize = trade.risk / (trade.stopLossPercent / 100);
+            const unrealizedPnl = ((currentAsset.price - trade.entryPrice) / trade.entryPrice) * tradeSize;
+            totalUnrealizedPnl += unrealizedPnl;
+            
+            // Aggiorna P/L non realizzato nel box
+            const pnlElement = document.getElementById(`pnl-${trade.id}`);
+            if(pnlElement) {
+                pnlElement.textContent = `${unrealizedPnl.toFixed(2)} USDT`;
+                pnlElement.className = unrealizedPnl >= 0 ? 'text-success' : 'text-danger';
+            }
+
+            // Aggiorna i prezzi di mercato del form di chiusura
+            const inputElement = document.getElementById(`closePrice-${trade.id}`);
+            if(inputElement) {
+                inputElement.value = currentAsset.price;
+            }
+
+            // Aggiorna colore del bordo
+            const boxElement = document.getElementById(`trade-${trade.id}`);
+            if (boxElement) {
+                boxElement.classList.remove('trade-in-profit', 'trade-in-loss');
+                if (unrealizedPnl >= 0) {
+                    boxElement.classList.add('trade-in-profit');
+                } else {
+                    boxElement.classList.add('trade-in-loss');
+                }
+            }
+
+            // Aggiorna progress bar del TP
+            const progressElement = document.getElementById(`tp-progress-${trade.id}`);
+            if (trade.takeProfitPrice && progressElement) {
+                const range = trade.takeProfitPrice - trade.entryPrice;
+                const progress = (currentAsset.price - trade.entryPrice);
+                let percentage = (progress / range) * 100;
+                percentage = Math.max(0, Math.min(percentage, 100)); // Blocca tra 0 e 100
+                
+                const progressBar = progressElement.querySelector('.progress-bar');
+                progressBar.style.width = `${percentage}%`;
+                progressBar.textContent = `${percentage.toFixed(1)}%`;
+            }
+        });
+
+        // Aggiorna riepilogo totale
+        const summaryElement = document.getElementById('liveSummary');
+        if(openTradesCount > 0) {
+            const pnlClass = totalUnrealizedPnl >= 0 ? 'text-success' : 'text-danger';
+            summaryElement.innerHTML = `
+                <div class="card card-body text-center">
+                    <h5>P/L Totale Non Realizzato: <strong class="${pnlClass}">${totalUnrealizedPnl.toFixed(2)} USDT</strong></h5>
+                    <small class="text-muted">Prezzo ${currentAsset.symbol}: ${currentAsset.price}</small>
+                </div>`;
+        } else {
+            summaryElement.innerHTML = '';
+        }
+    };
+
+    function copyToClipboard(text, element) {
+      navigator.clipboard.writeText(text).then(() => {
+        const feedbackSpan = element.querySelector('.copy-feedback');
+        if (feedbackSpan) {
+            const originalContent = feedbackSpan.innerHTML;
+            feedbackSpan.innerHTML = '<i class="bi bi-check-lg"></i> Copiato!';
+            setTimeout(() => { feedbackSpan.innerHTML = originalContent; }, 2000);
+        }
+      }).catch(err => console.error('Errore copia:', err));
+    }
+
+    const getValoriTPRapidi = (position) => {console.log(position);
+        if (position % 3 === 0) {
+            return [200, 210];
+        }
+        if (position % 2 === 0) {
+            return [100, 110];
+        }
+        if (position % 1 === 0) {
+            return [35, 40, 42];
+        }
+        return [35, 40, 42];
+    };
+
+    const renderTrades = () => {
+        const container = document.getElementById('tradesContainer');
+        container.innerHTML = '';
+
+        if (trades.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">Nessun trade attivo.</p>';
+            return;
+        }
+
+        trades.forEach((trade, index) => {
+            const isClosed = trade.status === 'closed';
+            const tradeSize = trade.risk / (trade.stopLossPercent / 100);
+            const stopLossPrice = trade.entryPrice * (1 - (trade.stopLossPercent / 100));
+
+            let takeProfitContent = '';
+            if (isClosed) {
+                takeProfitContent = `<strong>Take Profit:</strong> ${trade.takeProfitPrice ? trade.takeProfitPrice.toFixed(2) : 'N/A'}`;
+            } else if (trade.takeProfitPrice) {
+                // Se il TP è impostato, mostra il valore modificabile
+                takeProfitContent = `<strong>Take Profit:</strong> <span class="editable-value" onclick="editTakeProfit(${trade.id})">${trade.takeProfitPrice.toFixed(2)}</span>`;
+            } else {
+                // Se il TP NON è impostato, genera i pulsanti rapidi dinamicamente
+                const tpValues = getValoriTPRapidi(index+1); // <-- Chiamata alla funzione ausiliaria
+                const quickButtons = tpValues.map(value =>
+                    `<button class="btn btn-outline-success btn-sm" onclick="setQuickTP(${trade.id}, ${value})">+${value}%</button>`
+                ).join('');
+
+                takeProfitContent = `
+                    <div class="d-flex align-items-center gap-2">
+                        <strong>Imposta TP:</strong>
+                        ${quickButtons}
+                    </div>`;
+            }
+
+            const tradeBoxHTML = `
+                <div class="card trade-box mb-3 ${isClosed ? 'trade-closed' : 'trade-open'}" id="trade-${trade.id}">
+                    <div class="card-header d-flex justify-content-between">
+                        <strong>Trade #${index + 1} ${isClosed ? '(CHIUSO)' : ''}</strong>
+                        <span class="badge bg-secondary">Rischio: ${trade.risk.toFixed(2)} USDT</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <p class="mb-2"><strong>Size:</strong> ${tradeSize.toFixed(2)} USDT</p>
+                                <p class="mb-2">
+                                    <strong>Entrata:</strong> 
+                                    <span class="${!isClosed && 'editable-value'}" onclick="editEntryPrice(${trade.id})">${trade.entryPrice.toFixed(2)}</span>
+                                    ${!isClosed ? `<i class="bi bi-clipboard-plus-fill ms-2 text-primary" style="cursor: pointer;" title="Copia prezzo entrata ai trade successivi" onclick="copyEntryPrice(${trade.id})"></i>` : ''}
+                                </p>
+                                <p class="mb-2 text-danger"><strong>Stop Loss (${!isClosed ? `<span class="editable-value" onclick="editStopLoss(${trade.id})">${trade.stopLossPercent.toFixed(2)}</span>` : trade.stopLossPercent.toFixed(2)}%):</strong> ${stopLossPrice.toFixed(2)}</p>
+                                <p class="mb-0 text-success">${takeProfitContent}</p>
+                            </div>
+                            <div class="col-md-5">
+                                ${isClosed ? `
+                                    <p class="mb-2"><strong>Chiusura:</strong> ${trade.closePrice.toFixed(2)}</p>
+                                    <h5 class="${trade.pnl >= 0 ? 'text-success' : 'text-danger'}"><strong>P/L: ${trade.pnl.toFixed(2)} USDT</strong></h5>
+                                ` : `
+                                    <p class="mb-2"><strong>P/L Non Realizzato:</strong> <strong id="pnl-${trade.id}">...</strong></p>
+                                    <div class="input-group">
+                                        <input type="number" id="closePrice-${trade.id}" class="form-control" value="${currentAsset.price}"">
+                                        <button class="btn btn-outline-success" onclick="closeTrade(${trade.id})">Chiudi</button>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                        ${!isClosed && trade.takeProfitPrice ? `
+                        <div class="mt-3" id="tp-progress-${trade.id}">
+                            <small>Progresso verso TP</small>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>`;
+            container.innerHTML += tradeBoxHTML;
+        });
+
+        updateLiveElements(); 
+    };
+
+    // --- AVVIO APPLICAZIONE ---
+    document.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        startPriceTicker();
+    });
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

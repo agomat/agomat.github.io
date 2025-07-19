@@ -306,13 +306,25 @@
         }
     };
 
+    /**
+     * Imposta un TP rapido calcolato come multiplo del rischio (distanza entrata-stoploss).
+     * @param {number} id - L'ID del trade da modificare.
+     * @param {number} percentage - La percentuale che rappresenta il multiplo del rischio (es. 100 = 1:1 R:R, 200 = 2:1 R:R).
+     */
     const setQuickTP = (id, percentage) => {
         const trade = trades.find(t => t.id === id);
         if (!trade) return;
 
-        const multiplier = 1 + (percentage / 100);
-        trade.takeProfitPrice = trade.entryPrice * multiplier;
+        // 1. Calcola la distanza in prezzo tra l'entrata e lo stop loss (il "rischio per unità").
+        const riskDistance = trade.entryPrice * (trade.stopLossPercent / 100);
+
+        // 2. Calcola il moltiplicatore del profitto (es. 100% -> 1.0, 200% -> 2.0).
+        const rewardMultiplier = percentage / 100;
         
+        // 3. Il nuovo TP è il prezzo di entrata più la distanza di rischio moltiplicata per il R:R.
+        trade.takeProfitPrice = trade.entryPrice + (riskDistance * rewardMultiplier);
+        
+        // Salva i dati e aggiorna l'interfaccia.
         saveData();
         renderTrades();
     };

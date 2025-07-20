@@ -40,7 +40,7 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label for="riskSelect" class="form-label">Rischio Totale (USDT):</label>
-                    <select class="form-select" id="riskSelect">
+                    <select class="form-select" onchange="updatePreparationMargin()" id="riskSelect">
                         <option value="5">5</option>
                         <option value="10">10</option>
                         <option value="20">20</option>
@@ -55,7 +55,7 @@
                 </div>
                 <div class="col-md-6">
                     <label for="stopLossInput" class="form-label">Stop Loss (%)</label>
-                    <input type="number" step="0.01" class="form-control" id="stopLossInput" value="1.0">
+                    <input type="number" step="0.01" class="form-control" id="stopLossInput" value="1.0" onchange="updatePreparationMargin()">
                 </div>
             </div>
 <div id="preparationSection" class="mt-3 border p-3 rounded bg-light d-none">
@@ -238,8 +238,7 @@
     };
     // 3. CHIUDI SINGOLO TRADE
     const closeTrade = (id) => {
-        const closePriceInput = document.getElementById(`closePrice-${id}`);
-        const closePrice = parseFloat(closePriceInput.value);
+        const closePrice = parseFloat(prompt(`Inserisci il prezzo chiusura:`, currentAsset.price));
 
         if (isNaN(closePrice) || closePrice <= 0) {
             alert("Inserisci un prezzo di chiusura valido.");
@@ -266,7 +265,7 @@
             alert("Non ci sono trade aperti da chiudere.");
             return;
         }
-        const closePrice = parseFloat(prompt("Inserisci il prezzo di chiusura per TUTTI i trade aperti:", "70000.00"));
+        const closePrice = parseFloat(prompt("Inserisci il prezzo di chiusura per TUTTI i trade aperti:", currentAsset.price));
          if (isNaN(closePrice) || closePrice <= 0) {
             alert("Inserisci un prezzo di chiusura valido.");
             return;
@@ -410,10 +409,14 @@
                 pnlElement.className = unrealizedPnl >= 0 ? 'text-success' : 'text-danger';
             }
 
-            // Aggiorna i prezzi di mercato del form di chiusura
-            const inputElement = document.getElementById(`closePrice-${trade.id}`);
-            if(inputElement) {
-                inputElement.value = currentAsset.price;
+            // Calcolo della percentuale R:R live usando la nuova funzione.
+            const unrealizedRR_PercentText = calculateRiskRewardPercent(trade, currentAsset.price);
+            
+            // Aggiorna la percentuale R:R nell'interfaccia.
+            const pnlPercentElement = document.getElementById(`pnl-percent-r-${trade.id}`);
+            if (pnlPercentElement) {
+                pnlPercentElement.textContent = unrealizedRR_PercentText;
+                pnlPercentElement.className = unrealizedPnl >= 0 ? 'badge bg-success-subtle text-success-emphasis' : 'badge bg-danger-subtle text-danger-emphasis';
             }
 
             // Aggiorna colore del bordo
@@ -479,6 +482,19 @@
         return [35, 40, 42];
     };
 
+    const calculateRiskRewardPercent = (trade, price) => {
+        // Calcola la distanza in prezzo che rappresenta il 100% del rischio.
+        const riskDistance = trade.entryPrice * (trade.stopLossPercent / 100);
+        // Evita la divisione per zero se lo stop loss non è impostato correttamente.
+        if (riskDistance <= 0) {
+            return '';
+        }
+        // Calcola la percentuale di R:R.
+        const percent = ((price - trade.entryPrice) / riskDistance) * 100;
+        // Ritorna la stringa formattata.
+        return `(${percent.toFixed(0)}% R)`;
+    };
+
     const renderTrades = () => {
         const container = document.getElementById('tradesContainer');
         container.innerHTML = '';
@@ -513,6 +529,11 @@
                     </div>`;
             }
 
+            let finalRR_PercentText = '';
+            if (isClosed) {
+                finalRR_PercentText = calculateRiskRewardPercent(trade, trade.closePrice);
+            }
+
             const tradeBoxHTML = `
                 <div class="card trade-box mb-3 ${isClosed ? 'trade-closed' : 'trade-open'}" id="trade-${trade.id}">
                     <div class="card-header d-flex justify-content-between">
@@ -534,11 +555,10 @@
                             <div class="col-md-5">
                                 ${isClosed ? `
                                     <p class="mb-2"><strong>Chiusura:</strong> ${trade.closePrice.toFixed(2)}</p>
-                                    <h5 class="${trade.pnl >= 0 ? 'text-success' : 'text-danger'}"><strong>P/L: ${trade.pnl.toFixed(2)} USDT</strong></h5>
+                                    <h5 class="${trade.pnl >= 0 ? 'text-success' : 'text-danger'}"><strong>P/L: ${trade.pnl.toFixed(2)} USDT <small>${finalRR_PercentText}</small></strong></h5>
                                 ` : `
-                                    <p class="mb-2"><strong>P/L Non Realizzato:</strong> <strong id="pnl-${trade.id}">...</strong></p>
+                                    <p class="mb-2"><strong>P/L Non Realizzato:</strong> <strong id="pnl-${trade.id}">...</strong> <span id="pnl-percent-r-${trade.id}" class="badge ms-1"></span></p>
                                     <div class="input-group">
-                                        <input type="number" id="closePrice-${trade.id}" class="form-control" value="${currentAsset.price}"">
                                         <button class="btn btn-outline-success" onclick="closeTrade(${trade.id})">Chiudi</button>
                                     </div>
                                 `}

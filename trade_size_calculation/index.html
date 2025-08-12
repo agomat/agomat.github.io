@@ -41,16 +41,30 @@
                 <div class="col-md-6">
                     <label for="riskSelect" class="form-label">Rischio Totale (USDT):</label>
                     <select class="form-select" onchange="updatePreparationMargin()" id="riskSelect">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
                         <option value="5">5</option>
+                        <option value="7">7</option>
                         <option value="10">10</option>
+                        <option value="15">15</option>
                         <option value="20">20</option>
                         <option value="30">30</option>
+                        <option value="40">40</option>
+                        <option value="50">50</option>
                         <option value="60">60</option>
+                        <option value="70">70</option>
+                        <option value="80">80</option>
                         <option value="90">90</option>
+                        <option value="100 selected">100</option>
+                        <option value="120">120</option>
+                        <option value="130">130</option>
                         <option value="150">150</option>
-                        <option value="300" selected>300</option>
-                        <option value="600">600</option>
-                        <option value="900">900</option>
+                        <option value="200">200</option>
+                        <option value="250">250</option>
+                        <option value="300">300</option>
+                        <option value="400">400</option>
+                        <option value="500">500</option>
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -58,13 +72,17 @@
                     <input type="number" step="0.01" class="form-control" id="stopLossInput" value="1.0" onchange="updatePreparationMargin()">
                 </div>
             </div>
-<div id="preparationSection" class="mt-3 border p-3 rounded bg-light d-none">
+            <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="leverageModeCheckbox" onchange="updatePreparationMargin()" checked>
+                <label class="form-check-label" for="leverageModeCheckbox">Leva Fissa (Manuale)</label>
+              </div>
+            <div id="preparationSection" class="mt-3 border p-3 rounded bg-light d-none">
                 <h5>Simulazione Margine e Size</h5>
                 <div class="row align-items-end g-3">
                     <div class="col-lg-4 col-md-12">
                         <label for="leverageSelect" class="form-label">Leva Finanziaria:</label>
                         <select class="form-select" id="leverageSelect" onchange="updatePreparationMargin()">
-                             <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="5">5x</option><option value="10">10x</option><option value="20">20x</option><option value="30">30x</option><option value="40">40x</option><option value="50">50x</option><option value="60">60x</option><option value="70">70x</option><option value="75">75x</option><option value="100" selected>100x</option><option value="150">150x</option><option value="200">200x</option>
+                             <option value="1">1x</option> <option value="2">2x</option> <option value="3">3x</option> <option value="4">4x</option> <option value="5">5x</option> <option value="6">6x</option> <option value="7">7x</option> <option value="8">8x</option> <option value="9">9x</option> <option value="10">10x</option> <option value="11">11x</option> <option value="12">12x</option> <option value="13">13x</option> <option value="14">14x</option> <option value="15">15x</option> <option value="16">16x</option> <option value="17">17x</option> <option value="18">18x</option> <option value="19">19x</option> <option value="20">20x</option> <option value="21">21x</option> <option value="22">22x</option> <option value="23">23x</option> <option value="24">24x</option> <option value="25">25x</option> <option value="26">26x</option> <option value="27">27x</option> <option value="28">28x</option> <option value="29">29x</option> <option value="30">30x</option> <option value="31">31x</option> <option value="32">32x</option> <option value="33">33x</option> <option value="34">34x</option> <option value="35">35x</option> <option value="36">36x</option> <option value="37">37x</option> <option value="38">38x</option> <option value="39">39x</option> <option value="40">40x</option> <option value="41">41x</option> <option value="42">42x</option> <option value="43">43x</option> <option value="44">44x</option> <option value="45">45x</option> <option value="46">46x</option> <option value="47">47x</option> <option value="48">48x</option> <option value="49">49x</option> <option value="50">50x</option> <option value="51">51x</option> <option value="52">52x</option> <option value="53">53x</option> <option value="54">54x</option> <option value="55">55x</option> <option value="56">56x</option> <option value="57">57x</option> <option value="58">58x</option> <option value="59">59x</option> <option value="60">60x</option> <option value="61">61x</option> <option value="62">62x</option> <option value="63">63x</option> <option value="64">64x</option> <option value="65">65x</option> <option value="66">66x</option> <option value="67">67x</option> <option value="68">68x</option> <option value="69">69x</option> <option value="70">70x</option> <option value="71">71x</option> <option value="72">72x</option> <option value="73">73x</option> <option value="74">74x</option> <option value="75">75x</option> <option value="76">76x</option> <option value="77">77x</option> <option value="78">78x</option> <option value="79">79x</option> <option value="80">80x</option> <option value="81">81x</option> <option value="82">82x</option> <option value="83">83x</option> <option value="84">84x</option> <option value="85">85x</option> <option value="86">86x</option> <option value="87">87x</option> <option value="88">88x</option> <option value="89">89x</option> <option value="90">90x</option> <option value="91">91x</option> <option value="92">92x</option> <option value="93">93x</option> <option value="94">94x</option> <option value="95">95x</option> <option value="96">96x</option> <option value="97">97x</option> <option value="98">98x</option> <option value="99">99x</option> <option value="100">100x</option> <option value="101">101x</option> <option value="102">102x</option> <option value="103">103x</option> <option value="104">104x</option> <option value="105">105x</option> <option value="106">106x</option> <option value="107">107x</option> <option value="108">108x</option> <option value="109">109x</option> <option value="110">110x</option> <option value="111">111x</option> <option value="112">112x</option> <option value="113">113x</option> <option value="114">114x</option> <option value="115">115x</option> <option value="116">116x</option> <option value="117">117x</option> <option value="118">118x</option> <option value="119">119x</option> <option value="120">120x</option> <option value="121">121x</option> <option value="122">122x</option> <option value="123">123x</option> <option value="124">124x</option> <option value="125">125x</option> <option value="126">126x</option> <option value="127">127x</option> <option value="128">128x</option> <option value="129">129x</option> <option value="130">130x</option> <option value="131">131x</option> <option value="132">132x</option> <option value="133">133x</option> <option value="134">134x</option> <option value="135">135x</option> <option value="136">136x</option> <option value="137">137x</option> <option value="138">138x</option> <option value="139">139x</option> <option value="140">140x</option> <option value="141">141x</option> <option value="142">142x</option> <option value="143">143x</option> <option value="144">144x</option> <option value="145">145x</option> <option value="146">146x</option> <option value="147">147x</option> <option value="148">148x</option> <option value="149">149x</option> <option value="150">150x</option> <option value="151">151x</option> <option value="152">152x</option> <option value="153">153x</option> <option value="154">154x</option> <option value="155">155x</option> <option value="156">156x</option> <option value="157">157x</option> <option value="158">158x</option> <option value="159">159x</option> <option value="160">160x</option> <option value="161">161x</option> <option value="162">162x</option> <option value="163">163x</option> <option value="164">164x</option> <option value="165">165x</option> <option value="166">166x</option> <option value="167">167x</option> <option value="168">168x</option> <option value="169">169x</option> <option value="170">170x</option> <option value="171">171x</option> <option value="172">172x</option> <option value="173">173x</option> <option value="174">174x</option> <option value="175">175x</option> <option value="176">176x</option> <option value="177">177x</option> <option value="178">178x</option> <option value="179">179x</option> <option value="180">180x</option> <option value="181">181x</option> <option value="182">182x</option> <option value="183">183x</option> <option value="184">184x</option> <option value="185">185x</option> <option value="186">186x</option> <option value="187">187x</option> <option value="188">188x</option> <option value="189">189x</option> <option value="190">190x</option> <option value="191">191x</option> <option value="192">192x</option> <option value="193">193x</option> <option value="194">194x</option> <option value="195">195x</option> <option value="196">196x</option> <option value="197">197x</option> <option value="198">198x</option> <option value="199">199x</option> <option value="200">200x</option>
                         </select>
                     </div>
                     <div class="col-lg-4 col-md-6" id="marginResultWrapper">
@@ -114,25 +132,46 @@
         updatePreparationMargin();
     };
     
+
     const updatePreparationMargin = () => {
+        const isLeverageFixed = document.getElementById('leverageModeCheckbox').checked;
         const risk = parseFloat(document.getElementById('riskSelect').value);
         const stopLossPercent = parseFloat(document.getElementById('stopLossInput').value);
-        const leverage = parseFloat(document.getElementById('leverageSelect').value);
-        
+        const leverageSelect = document.getElementById('leverageSelect'); // Seleziona l'elemento <select>
+
         // Seleziona i contenitori per i risultati
         const marginWrapper = document.getElementById('marginResultWrapper');
         const sizeWrapper = document.getElementById('sizeResultWrapper');
 
-        if(isNaN(risk) || isNaN(stopLossPercent) || stopLossPercent <= 0) {
+        if (isNaN(risk) || isNaN(stopLossPercent) || stopLossPercent <= 0) {
             marginWrapper.innerHTML = `<label class="form-label">&nbsp;</label><div class="alert alert-danger p-2 mb-0">Dati non validi</div>`;
             sizeWrapper.innerHTML = ''; // Pulisce il campo size se i dati sono invalidi
             return;
         }
 
-        // Calcoli
+        let leverage;
+
+        if (isLeverageFixed) {
+            // --- NUOVA LOGICA: Margine = Rischio ---
+            // 1. Calcola la leva teorica necessaria.
+            const idealLeverage = 100 / stopLossPercent;
+            
+            // 2. Limita la leva tra 1x e 200x (i limiti della select).
+            leverage = Math.max(1, Math.min(idealLeverage, 200));
+
+            // 3. Aggiorna la UI per mostrare la leva calcolata, arrotondandola al valore intero più vicino.
+            leverageSelect.value = Math.round(leverage);
+            leverageSelect.disabled = true; // Disabilita la select per indicare che il valore è automatico
+        } else {
+            // --- LOGICA ESISTENTE: Leva manuale ---
+            leverageSelect.disabled = false; // Assicura che la select sia abilitata
+            leverage = parseFloat(leverageSelect.value);
+        }
+
+        // I calcoli successivi rimangono invariati e funzionano per entrambe le logiche.
         const totalTradeSize = risk / (stopLossPercent / 100);
         const margin = totalTradeSize / leverage;
-        
+
         // Inserisce il risultato del Margine
         marginWrapper.innerHTML = `
             <label class="form-label">Margine Richiesto:</label>
@@ -141,7 +180,7 @@
                 <span class="copy-feedback ms-2 badge bg-primary float-end" title="Copia"><i class="bi bi-clipboard"></i></span>
             </div>
         `;
-        
+
         // Inserisce il risultato della Size
         sizeWrapper.innerHTML = `
             <label class="form-label">Size Totale:</label>
@@ -151,7 +190,6 @@
             </div>
         `;
     };
-
     
     // API MOCK: Simula una chiamata per ottenere il prezzo
     const fetchPrice = (symbol) => {

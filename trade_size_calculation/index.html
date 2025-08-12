@@ -109,26 +109,23 @@
 </div>
 
 <script>
-    // --- MODELLO DATI E VARIABILI GLOBALI ---
     let trades = [];
     let currentAsset = { symbol: 'N/A', price: 0 };
     let priceTickerInterval = null;
-
-    // --- FUNZIONI DI GESTIONE DATI E API ---
 
     const saveData = () => localStorage.setItem('tradeManagerData_v1', JSON.stringify(trades));
     const loadData = () => {
         const savedData = localStorage.getItem('tradeManagerData_v1');
         if (savedData) {
             trades = JSON.parse(savedData);
-            renderTrades(); // Prima renderizzazione statica
-            updateLiveElements(); // Aggiorna subito i dati live
+            renderTrades();
+            updateLiveElements();
         }
     };
 
     const prepareTrade = () => {
         const prepSection = document.getElementById('preparationSection');
-        prepSection.classList.remove('d-none'); // Mostra la sezione
+        prepSection.classList.remove('d-none');
         updatePreparationMargin();
     };
     
@@ -137,42 +134,31 @@
         const isLeverageFixed = document.getElementById('leverageModeCheckbox').checked;
         const risk = parseFloat(document.getElementById('riskSelect').value);
         const stopLossPercent = parseFloat(document.getElementById('stopLossInput').value);
-        const leverageSelect = document.getElementById('leverageSelect'); // Seleziona l'elemento <select>
+        const leverageSelect = document.getElementById('leverageSelect');
 
-        // Seleziona i contenitori per i risultati
         const marginWrapper = document.getElementById('marginResultWrapper');
         const sizeWrapper = document.getElementById('sizeResultWrapper');
 
         if (isNaN(risk) || isNaN(stopLossPercent) || stopLossPercent <= 0) {
             marginWrapper.innerHTML = `<label class="form-label">&nbsp;</label><div class="alert alert-danger p-2 mb-0">Dati non validi</div>`;
-            sizeWrapper.innerHTML = ''; // Pulisce il campo size se i dati sono invalidi
+            sizeWrapper.innerHTML = '';
             return;
         }
 
         let leverage;
 
         if (isLeverageFixed) {
-            // --- NUOVA LOGICA: Margine = Rischio ---
-            // 1. Calcola la leva teorica necessaria.
             const idealLeverage = 100 / stopLossPercent;
-            
-            // 2. Limita la leva tra 1x e 200x (i limiti della select).
             leverage = Math.max(1, Math.min(idealLeverage, 200));
-
-            // 3. Aggiorna la UI per mostrare la leva calcolata, arrotondandola al valore intero più vicino.
             leverageSelect.value = Math.round(leverage);
-            leverageSelect.disabled = true; // Disabilita la select per indicare che il valore è automatico
+            leverageSelect.disabled = true;
         } else {
-            // --- LOGICA ESISTENTE: Leva manuale ---
-            leverageSelect.disabled = false; // Assicura che la select sia abilitata
+            leverageSelect.disabled = false;
             leverage = parseFloat(leverageSelect.value);
         }
-
-        // I calcoli successivi rimangono invariati e funzionano per entrambe le logiche.
         const totalTradeSize = risk / (stopLossPercent / 100);
         const margin = totalTradeSize / leverage;
 
-        // Inserisce il risultato del Margine
         marginWrapper.innerHTML = `
             <label class="form-label">Margine Richiesto:</label>
             <div class="alert alert-secondary p-2 mb-0 copyable" onclick="copyToClipboard('${margin.toFixed(2)}', this)">
@@ -181,7 +167,6 @@
             </div>
         `;
 
-        // Inserisce il risultato della Size
         sizeWrapper.innerHTML = `
             <label class="form-label">Size Totale:</label>
             <div class="alert alert-secondary p-2 mb-0 copyable" onclick="copyToClipboard('${totalTradeSize.toFixed(2)}', this)">
@@ -191,10 +176,8 @@
         `;
     };
     
-    // API MOCK: Simula una chiamata per ottenere il prezzo
     const fetchPrice = (symbol) => {
         return new Promise((resolve) => {
-            // Simula una leggera variazione di prezzo per dinamicità
             const basePrice = 115000;
             const randomFactor = (Math.random() - 60.5) * 100; // Variazione di +/- 50
             const newPrice = (basePrice + randomFactor).toFixed(2);
@@ -204,7 +187,7 @@
                     symbol: symbol,
                     price: newPrice
                 });
-            }, 500); // Simula latenza di rete
+            }, 500);
         });
     };
 
@@ -223,13 +206,10 @@
             });
         };
 
-        tick(); // Esegui subito la prima volta
-        priceTickerInterval = setInterval(tick, 10000/2); // E poi ogni 10 secondi
+        tick();
+        priceTickerInterval = setInterval(tick, 10000/2);
     };
 
-    // --- FUNZIONI DI GESTIONE TRADE (Logica di business) ---
-
-    // Funzione helper per aggiungere 3 trade (usata da APRI e PIRAMIDA)
     const addThreeTrades = () => {
         const totalRisk = parseFloat(document.getElementById('riskSelect').value);
         const stopLossPercent = parseFloat(document.getElementById('stopLossInput').value);
@@ -257,7 +237,6 @@
         saveData();
         renderTrades();
     }
-    // 1. APRI TRADE INIZIALE (3 size)
     const openInitialTrades = () => {
         if (trades.length > 0 && !confirm("Hai già dei trade aperti. Vuoi resettarli e aprirne di nuovi?")) {
             return;
@@ -266,7 +245,6 @@
         addThreeTrades();
     };
 
-    // 2. PIRAMIDA (Aggiungi 3 nuove size)
     const pyramidTrade = () => {
         if (trades.length === 0) {
             alert("Devi prima aprire un trade con 'APRI TRADE'.");
@@ -274,7 +252,6 @@
         }
         addThreeTrades();
     };
-    // 3. CHIUDI SINGOLO TRADE
     const closeTrade = (id) => {
         const closePrice = parseFloat(prompt(`Inserisci il prezzo chiusura:`, currentAsset.price));
 
@@ -296,7 +273,6 @@
         renderTrades();
     };
 
-    // 4. CHIUDI TUTTI I TRADE
     const closeAllTrades = () => {
         const openTrades = trades.filter(t => t.status === 'open');
         if (openTrades.length === 0) {
@@ -321,17 +297,15 @@
         renderTrades();
     };
 
-    // 5. RESETTA TUTTO
     const resetAll = () => {
         if (confirm("Sei sicuro di voler CANCELLARE tutti i trade e resettare il pannello? L'operazione è irreversibile.")) {
             trades = [];
             localStorage.removeItem('tradeManagerData_v1');
-            document.getElementById('preparationSection').classList.add('d-none'); // Nasconde la sezione di preparazione
+            document.getElementById('preparationSection').classList.add('d-none');
             renderTrades();
         }
     };
     
-    // Funzioni di modifica inline
     const editEntryPrice = (id) => {
         const trade = trades.find(t => t.id === id);
         if (!trade) return;
@@ -343,25 +317,14 @@
         }
     };
 
-    /**
-     * Imposta un TP rapido calcolato come multiplo del rischio (distanza entrata-stoploss).
-     * @param {number} id - L'ID del trade da modificare.
-     * @param {number} percentage - La percentuale che rappresenta il multiplo del rischio (es. 100 = 1:1 R:R, 200 = 2:1 R:R).
-     */
     const setQuickTP = (id, percentage) => {
         const trade = trades.find(t => t.id === id);
         if (!trade) return;
 
-        // 1. Calcola la distanza in prezzo tra l'entrata e lo stop loss (il "rischio per unità").
         const riskDistance = trade.entryPrice * (trade.stopLossPercent / 100);
-
-        // 2. Calcola il moltiplicatore del profitto (es. 100% -> 1.0, 200% -> 2.0).
         const rewardMultiplier = percentage / 100;
-        
-        // 3. Il nuovo TP è il prezzo di entrata più la distanza di rischio moltiplicata per il R:R.
         trade.takeProfitPrice = trade.entryPrice + (riskDistance * rewardMultiplier);
         
-        // Salva i dati e aggiorna l'interfaccia.
         saveData();
         renderTrades();
     };
@@ -377,7 +340,6 @@
         }
     };
     
-    // Modifica Take Profit
     const editTakeProfit = (id) => {
         const trade = trades.find(t => t.id === id);
         if (!trade) return;
@@ -388,14 +350,13 @@
             trade.takeProfitPrice = newTP;
             saveData();
             renderTrades();
-        } else if (prompt.arguments[1] === '') { // Se l'utente cancella il valore
+        } else if (prompt.arguments[1] === '') {
             trade.takeProfitPrice = null;
             saveData();
             renderTrades();
         }
     };
 
-    // Copia il prezzo di entrata nei trade successivi
     const copyEntryPrice = (sourceId) => {
         const sourceIndex = trades.findIndex(t => t.id === sourceId);
         if (sourceIndex === -1) return;
@@ -410,7 +371,6 @@
 
         let copiedCount = 0;
         for (let i = sourceIndex + 1; i < trades.length && copiedCount < numToCopy; i++) {
-            // Copia solo se il trade successivo è aperto
             if (trades[i] && trades[i].status === 'open') {
                 trades[i].entryPrice = sourcePrice;
                 copiedCount++;
@@ -425,9 +385,6 @@
         }
     };
 
-
-    // --- FUNZIONI DI RENDERING E AGGIORNAMENTO UI ---
-
     const updateLiveElements = () => {
         let totalUnrealizedPnl = 0;
         let openTradesCount = 0;
@@ -440,24 +397,20 @@
             const unrealizedPnl = ((currentAsset.price - trade.entryPrice) / trade.entryPrice) * tradeSize;
             totalUnrealizedPnl += unrealizedPnl;
             
-            // Aggiorna P/L non realizzato nel box
             const pnlElement = document.getElementById(`pnl-${trade.id}`);
             if(pnlElement) {
                 pnlElement.textContent = `${unrealizedPnl.toFixed(2)} USDT`;
                 pnlElement.className = unrealizedPnl >= 0 ? 'text-success' : 'text-danger';
             }
 
-            // Calcolo della percentuale R:R live usando la nuova funzione.
             const unrealizedRR_PercentText = calculateRiskRewardPercent(trade, currentAsset.price);
             
-            // Aggiorna la percentuale R:R nell'interfaccia.
             const pnlPercentElement = document.getElementById(`pnl-percent-r-${trade.id}`);
             if (pnlPercentElement) {
                 pnlPercentElement.textContent = unrealizedRR_PercentText;
                 pnlPercentElement.className = unrealizedPnl >= 0 ? 'badge bg-success-subtle text-success-emphasis' : 'badge bg-danger-subtle text-danger-emphasis';
             }
 
-            // Aggiorna colore del bordo
             const boxElement = document.getElementById(`trade-${trade.id}`);
             if (boxElement) {
                 boxElement.classList.remove('trade-in-profit', 'trade-in-loss');
@@ -468,13 +421,12 @@
                 }
             }
 
-            // Aggiorna progress bar del TP
             const progressElement = document.getElementById(`tp-progress-${trade.id}`);
             if (trade.takeProfitPrice && progressElement) {
                 const range = trade.takeProfitPrice - trade.entryPrice;
                 const progress = (currentAsset.price - trade.entryPrice);
                 let percentage = (progress / range) * 100;
-                percentage = Math.max(0, Math.min(percentage, 100)); // Blocca tra 0 e 100
+                percentage = Math.max(0, Math.min(percentage, 100));
                 
                 const progressBar = progressElement.querySelector('.progress-bar');
                 progressBar.style.width = `${percentage}%`;
@@ -482,7 +434,6 @@
             }
         });
 
-        // Aggiorna riepilogo totale
         const summaryElement = document.getElementById('liveSummary');
         if(openTradesCount > 0) {
             const pnlClass = totalUnrealizedPnl >= 0 ? 'text-success' : 'text-danger';
@@ -521,15 +472,11 @@
     };
 
     const calculateRiskRewardPercent = (trade, price) => {
-        // Calcola la distanza in prezzo che rappresenta il 100% del rischio.
         const riskDistance = trade.entryPrice * (trade.stopLossPercent / 100);
-        // Evita la divisione per zero se lo stop loss non è impostato correttamente.
         if (riskDistance <= 0) {
             return '';
         }
-        // Calcola la percentuale di R:R.
         const percent = ((price - trade.entryPrice) / riskDistance) * 100;
-        // Ritorna la stringa formattata.
         return `(${percent.toFixed(0)}% R)`;
     };
 
@@ -551,11 +498,9 @@
             if (isClosed) {
                 takeProfitContent = `<strong>Take Profit:</strong> ${trade.takeProfitPrice ? trade.takeProfitPrice.toFixed(2) : 'N/A'}`;
             } else if (trade.takeProfitPrice) {
-                // Se il TP è impostato, mostra il valore modificabile
                 takeProfitContent = `<strong>Take Profit:</strong> <span class="editable-value" onclick="editTakeProfit(${trade.id})">${trade.takeProfitPrice.toFixed(2)}</span>`;
             } else {
-                // Se il TP NON è impostato, genera i pulsanti rapidi dinamicamente
-                const tpValues = getValoriTPRapidi(index+1); // <-- Chiamata alla funzione ausiliaria
+                const tpValues = getValoriTPRapidi(index+1);
                 const quickButtons = tpValues.map(value =>
                     `<button class="btn btn-outline-success btn-sm" onclick="setQuickTP(${trade.id}, ${value})">+${value}%</button>`
                 ).join('');
@@ -618,7 +563,6 @@
         updateLiveElements(); 
     };
 
-    // --- AVVIO APPLICAZIONE ---
     document.addEventListener('DOMContentLoaded', () => {
         loadData();
         startPriceTicker();
